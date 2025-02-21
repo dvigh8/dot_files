@@ -1,6 +1,6 @@
 git clone --bare https://github.com/dvigh8/dot_files.git $HOME/.dotfiles
 function config {
-   /usr/bin/git --git-dir=$HOME/.cfg/ --work-tree=$HOME $@
+   /usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME $@
 }
 mkdir -p .config-backup
 config checkout
