@@ -120,7 +120,6 @@ source $ZSH/oh-my-zsh.sh
 alias cluster="/Users/djosephs@amgen.com/venv/bin/python -m cluster_manager"
 alias workflow="gcloud dataproc workflow-templates"
 
-eval $(thefuck --alias)
 alias lz="lazygit"
 alias g="lazygit"
 autoload -U compinit
@@ -141,11 +140,15 @@ function lst(){
   fi
 }
 alias cluster="$HOME/venv/bin/python -m cluster_manager"
-alias vim="nvim"
+alias vi="nvim"
 alias db="databricks"
 alias chat="chatgpt"
-[ -f /opt/homebrew/opt/fzf/shell/completion.zsh ] && source /opt/homebrew/opt/fzf/shell/completion.zsh
-[ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ] && source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
+if [[ $(uname) == "Linux" ]]; then
+  source <(fzf --zsh)
+else
+  [ -f /opt/homebrew/opt/fzf/shell/completion.zsh ] && source /opt/homebrew/opt/fzf/shell/completion.zsh
+  [ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ] && source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
+fi
 bindkey '^R' fzf-history-widget
 PATH="$PATH":"/Applications/CMake.app/Contents/bin"
 . "$HOME/.local/bin/env"
