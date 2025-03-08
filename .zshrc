@@ -140,11 +140,15 @@ function lst(){
   fi
 }
 alias cluster="$HOME/venv/bin/python -m cluster_manager"
-alias vim="nvim"
+alias vi="nvim"
 alias db="databricks"
 alias chat="chatgpt"
-[ -f /opt/homebrew/opt/fzf/shell/completion.zsh ] && source /opt/homebrew/opt/fzf/shell/completion.zsh
-[ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ] && source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
+if [[ $(uname) == "Linux" ]]; then
+  source <(fzf --zsh)
+else
+  [ -f /opt/homebrew/opt/fzf/shell/completion.zsh ] && source /opt/homebrew/opt/fzf/shell/completion.zsh
+  [ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ] && source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
+fi
 bindkey '^R' fzf-history-widget
 PATH="$PATH":"/Applications/CMake.app/Contents/bin"
 . "$HOME/.local/bin/env"
@@ -153,3 +157,9 @@ export XDG_CONFIG_HOME=$HOME/.config/
 alias dbb="databricks bundle"
 alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 . $HOME/.envs
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/Users/djosephs@amgen.com/Downloads/google-cloud-sdk 2/path.zsh.inc' ]; then . '/Users/djosephs@amgen.com/Downloads/google-cloud-sdk 2/path.zsh.inc'; fi
+
+# The next line enables shell command completion for gcloud.
+if [ -f '/Users/djosephs@amgen.com/Downloads/google-cloud-sdk 2/completion.zsh.inc' ]; then . '/Users/djosephs@amgen.com/Downloads/google-cloud-sdk 2/completion.zsh.inc'; fi
