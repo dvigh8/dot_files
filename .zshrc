@@ -117,7 +117,6 @@ source $ZSH/oh-my-zsh.sh
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-alias cluster="/Users/djosephs@amgen.com/venv/bin/python -m cluster_manager"
 alias workflow="gcloud dataproc workflow-templates"
 
 alias lz="lazygit"
