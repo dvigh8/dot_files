@@ -120,7 +120,6 @@ source $ZSH/oh-my-zsh.sh
 alias cluster="/Users/djosephs@amgen.com/venv/bin/python -m cluster_manager"
 alias workflow="gcloud dataproc workflow-templates"
 
-eval $(thefuck --alias)
 alias lz="lazygit"
 alias g="lazygit"
 autoload -U compinit
