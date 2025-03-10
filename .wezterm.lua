@@ -8,5 +8,6 @@ local config = {
 	},
 }
 config.color_scheme = "Dracula"
+config.color_scheme = "Dark Pastel (Gogh)"
 config.font_size = 18.0
 return config
