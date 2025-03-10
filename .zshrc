@@ -77,7 +77,7 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git web-search)
+plugins=(git web-search vi-mode)
 
 ZSH_WEB_SEARCH_ENGINES=(
     kagi "https://kagi.com/search?q="
@@ -117,7 +117,6 @@ source $ZSH/oh-my-zsh.sh
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
-alias cluster="/Users/djosephs@amgen.com/venv/bin/python -m cluster_manager"
 alias workflow="gcloud dataproc workflow-templates"
 
 alias lz="lazygit"
@@ -125,6 +124,13 @@ alias g="lazygit"
 autoload -U compinit
 compinit -i
 
+if [[ $(uname) == "Linux" ]]; then
+  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+  source <(fzf --zsh)
+else
+  [ -f /opt/homebrew/opt/fzf/shell/completion.zsh ] && source /opt/homebrew/opt/fzf/shell/completion.zsh
+  [ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ] && source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
+fi
 eval "$(zoxide init zsh)"
 alias te='cd "$(lf -print-last-dir "$@")"'
 alias cd='z'
@@ -143,12 +149,6 @@ alias cluster="$HOME/venv/bin/python -m cluster_manager"
 alias vi="nvim"
 alias db="databricks"
 alias chat="chatgpt"
-if [[ $(uname) == "Linux" ]]; then
-  source <(fzf --zsh)
-else
-  [ -f /opt/homebrew/opt/fzf/shell/completion.zsh ] && source /opt/homebrew/opt/fzf/shell/completion.zsh
-  [ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ] && source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
-fi
 bindkey '^R' fzf-history-widget
 PATH="$PATH":"/Applications/CMake.app/Contents/bin"
 . "$HOME/.local/bin/env"

@@ -1,4 +1,4 @@
-git clone --bare https://github.com/dvigh8/dot_files.git $HOME/.dotfiles
+git clone --bare git@github.com:dvigh8/dot_files.git $HOME/.dotfiles
 function config {
    /usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME $@
 }
