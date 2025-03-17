@@ -82,6 +82,8 @@ plugins=(git web-search vi-mode)
 ZSH_WEB_SEARCH_ENGINES=(
     kagi "https://kagi.com/search?q="
     k "https://kagi.com/search?q="
+    ask "https://kagi.com/assistant?q="
+    a "https://kagi.com/assistant?q="
 )
 
 source $ZSH/oh-my-zsh.sh
@@ -148,7 +150,6 @@ function lst(){
 alias cluster="$HOME/venv/bin/python -m cluster_manager"
 alias vi="nvim"
 alias db="databricks"
-alias chat="chatgpt"
 bindkey '^R' fzf-history-widget
 PATH="$PATH":"/Applications/CMake.app/Contents/bin"
 . "$HOME/.local/bin/env"
