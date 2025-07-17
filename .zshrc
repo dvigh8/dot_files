@@ -132,6 +132,7 @@ if [[ $(uname) == "Linux" ]]; then
 else
   [ -f /opt/homebrew/opt/fzf/shell/completion.zsh ] && source /opt/homebrew/opt/fzf/shell/completion.zsh
   [ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ] && source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
+  export PATH=/opt/homebrew/bin:$PATH
 fi
 eval "$(zoxide init zsh)"
 alias te='cd "$(lf -print-last-dir "$@")"'
@@ -152,7 +153,6 @@ alias vi="nvim"
 alias db="databricks"
 bindkey '^R' fzf-history-widget
 PATH="$PATH":"/Applications/CMake.app/Contents/bin"
-. "$HOME/.local/bin/env"
 export VIRTUAL_ENV=$HOME/.venv/
 export XDG_CONFIG_HOME=$HOME/.config/
 alias dbb="databricks bundle"
@@ -164,3 +164,9 @@ if [ -f '/Users/djosephs@amgen.com/Downloads/google-cloud-sdk 2/path.zsh.inc' ];
 
 # The next line enables shell command completion for gcloud.
 if [ -f '/Users/djosephs@amgen.com/Downloads/google-cloud-sdk 2/completion.zsh.inc' ]; then . '/Users/djosephs@amgen.com/Downloads/google-cloud-sdk 2/completion.zsh.inc'; fi
+# source ~/powerlevel10k/powerlevel10k.zsh-theme
+autoload bashcompinit && bashcompinit
+source $(brew --prefix)/etc/bash_completion.d/az
+
+. "$HOME/.local/bin/env"
+terraform -install-autocomplete
