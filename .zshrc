@@ -67,8 +67,17 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
 # or set a custom format using the strftime function format specifications,
 # see 'man strftime' for details.
-# HIST_STAMPS="mm/dd/yyyy"
+HIST_STAMPS="yyyy-mm-dd"
+ 
+# Set the history file location
+HISTFILE=~/.zsh_history
 
+# Set history size
+HISTSIZE=10000
+SAVEHIST=10000
+
+# Optional: Share history across sessions
+setopt SHARE_HISTORY
 # Would you like to use another custom folder than $ZSH/custom?
 # ZSH_CUSTOM=/path/to/new-custom-folder
 
@@ -132,6 +141,7 @@ if [[ $(uname) == "Linux" ]]; then
 else
   [ -f /opt/homebrew/opt/fzf/shell/completion.zsh ] && source /opt/homebrew/opt/fzf/shell/completion.zsh
   [ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ] && source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
+  export PATH=/opt/homebrew/bin:$PATH
 fi
 eval "$(zoxide init zsh)"
 alias te='cd "$(lf -print-last-dir "$@")"'
@@ -151,8 +161,7 @@ alias cluster="$HOME/venv/bin/python -m cluster_manager"
 alias vi="nvim"
 alias db="databricks"
 bindkey '^R' fzf-history-widget
-PATH="$PATH":"/Applications/CMake.app/Contents/bin"
-. "$HOME/.local/bin/env"
+PATH="$PATH":"/Applications/CMake.app/Contents/bin:$HOME/.cargo/bin"
 export VIRTUAL_ENV=$HOME/.venv/
 export XDG_CONFIG_HOME=$HOME/.config/
 alias dbb="databricks bundle"
@@ -169,3 +178,10 @@ if [ -f '/Users/djosephs@amgen.com/Downloads/google-cloud-sdk 2/completion.zsh.i
 export PATH="$PATH:/Users/josephsd/.lmstudio/bin"
 # End of LM Studio CLI section
 
+# source ~/powerlevel10k/powerlevel10k.zsh-theme
+autoload bashcompinit && bashcompinit
+source $(brew --prefix)/etc/bash_completion.d/az
+
+. "$HOME/.local/bin/env"
+
+complete -o nospace -C /opt/homebrew/bin/terraform terraform
