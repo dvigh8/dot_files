@@ -1,0 +1,20 @@
+
+[[mgr.prepend_keymap]]
+on = [ "g", "d" ]
+run = "cd ~/Library/CloudStorage/OneDrive-AvidityBiosciences/AI & Data Science Team - Documents/AI & Data Science Team Folder/01_Projects"
+
+[[mgr.prepend_keymap]]
+on = [ "g", "h" ]
+run = "cd ~"
+
+[[mgr.prepend_keymap]]
+on = [ "g", "r" ]
+run = "cd ~/Repos"
+[[mgr.prepend_keymap]]
+on = [ "g", "c" ]
+run = "cd ~/.config"
+
+[[mgr.prepend_keymap]]
+on   = "f"
+run  = "plugin jump-to-char"
+desc = "Jump to char"

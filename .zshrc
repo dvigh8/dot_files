@@ -180,3 +180,10 @@ source $(brew --prefix)/etc/bash_completion.d/az
 . "$HOME/.local/bin/env"
 
 complete -o nospace -C /opt/homebrew/bin/terraform terraform
+function y() {
+	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+	yazi "$@" --cwd-file="$tmp"
+	IFS= read -r -d '' cwd < "$tmp"
+	[ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && builtin cd -- "$cwd"
+	rm -f -- "$tmp"
+}
