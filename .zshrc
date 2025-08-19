@@ -167,7 +167,9 @@ export XDG_CONFIG_HOME=$HOME/.config/
 alias dbb="databricks bundle"
 alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
 
-alias lazydot='GIT_DIR=$HOME/.dotfiles/ GIT_WORK_TREE=$HOME lazygit'
+alias dot='GIT_DIR=$HOME/.dotfiles/ GIT_WORK_TREE=$HOME lazygit'
+
+alias dotall='GIT_DIR=$HOME/.dotfiles/ GIT_WORK_TREE=$HOME GIT_CONFIG_PARAMETERS="'\''status.showUntrackedFiles=normal'\''" lazygit'
 . $HOME/.envs
 
 # The next line updates PATH for the Google Cloud SDK.
