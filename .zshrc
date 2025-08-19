@@ -173,6 +173,11 @@ if [ -f '/Users/djosephs@amgen.com/Downloads/google-cloud-sdk 2/path.zsh.inc' ];
 
 # The next line enables shell command completion for gcloud.
 if [ -f '/Users/djosephs@amgen.com/Downloads/google-cloud-sdk 2/completion.zsh.inc' ]; then . '/Users/djosephs@amgen.com/Downloads/google-cloud-sdk 2/completion.zsh.inc'; fi
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/josephsd/.lmstudio/bin"
+# End of LM Studio CLI section
+
 # source ~/powerlevel10k/powerlevel10k.zsh-theme
 autoload bashcompinit && bashcompinit
 source $(brew --prefix)/etc/bash_completion.d/az
