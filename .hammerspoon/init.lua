@@ -30,3 +30,23 @@ hs.hotkey.bind({ "cmd", "ctrl" }, "L", function()
 		end
 	)
 end)
+
+-- Toggle Microsoft Teams microphone
+hs.hotkey.bind({ "cmd", "ctrl" }, "M", function()
+	local teams = hs.application.find("Microsoft Teams")
+	if teams then
+		local previousApp = hs.application.frontmostApplication()
+		teams:activate()
+		hs.timer.doAfter(0.1, function()
+			hs.eventtap.keyStroke({ "cmd", "shift" }, "M")
+			hs.timer.doAfter(0.1, function()
+				if previousApp and previousApp ~= teams then
+					previousApp:activate()
+				end
+			end)
+		end)
+		hs.notify.show("Teams", "", "Microphone toggled")
+	else
+		hs.notify.show("Teams", "", "Microsoft Teams is not running")
+	end
+end)
