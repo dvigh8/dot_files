@@ -166,6 +166,8 @@ export VIRTUAL_ENV=$HOME/.venv/
 export XDG_CONFIG_HOME=$HOME/.config/
 alias dbb="databricks bundle"
 alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
+
+alias lazydot='GIT_DIR=$HOME/.dotfiles/ GIT_WORK_TREE=$HOME lazygit'
 . $HOME/.envs
 
 # The next line updates PATH for the Google Cloud SDK.
