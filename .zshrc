@@ -196,3 +196,30 @@ function y() {
 	[ -n "$cwd" ] && [ "$cwd" != "$PWD" ] && builtin cd -- "$cwd"
 	rm -f -- "$tmp"
 }
+
+find_and_activate_venv() {
+    local current_dir="$PWD"
+    local venv_dirs=(".venv" "venv" ".virtualenv" "virtualenv")
+
+    while [[ "$current_dir" != "/" ]]; do
+        for venv_name in "${venv_dirs[@]}"; do
+            if [[ -d "$current_dir/$venv_name" ]] && [[ -f "$current_dir/$venv_name/bin/activate" ]]; then
+                echo "🐍 Activating venv: $current_dir/$venv_name"
+                source "$current_dir/$venv_name/bin/activate"
+                return 0
+            fi
+        done
+        current_dir="$(dirname "$current_dir")"
+    done
+
+    echo "❌ No virtual environment found in parent directories"
+    return 1
+}
+
+# Deactivate current venv if any, then activate the found one
+auto_venv() {
+    [[ -n "$VIRTUAL_ENV" ]] && deactivate
+    find_and_activate_venv
+}
+
+alias venv='auto_venv'

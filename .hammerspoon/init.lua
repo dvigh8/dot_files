@@ -50,3 +50,41 @@ hs.hotkey.bind({ "cmd", "ctrl" }, "M", function()
 		hs.notify.show("Teams", "", "Microsoft Teams is not running")
 	end
 end)
+-- Toggle Microsoft Teams video
+hs.hotkey.bind({ "cmd", "ctrl" }, "V", function()
+	local teams = hs.application.find("Microsoft Teams")
+	if teams then
+		local previousApp = hs.application.frontmostApplication()
+		teams:activate()
+		hs.timer.doAfter(0.1, function()
+			hs.eventtap.keyStroke({ "cmd", "shift" }, "O")
+			hs.timer.doAfter(0.1, function()
+				if previousApp and previousApp ~= teams then
+					previousApp:activate()
+				end
+			end)
+		end)
+		hs.notify.show("Teams", "", "Video toggled")
+	else
+		hs.notify.show("Teams", "", "Microsoft Teams is not running")
+	end
+end)
+-- End Microsoft Teams Call
+hs.hotkey.bind({ "cmd", "ctrl" }, "D", function()
+	local teams = hs.application.find("Microsoft Teams")
+	if teams then
+		local previousApp = hs.application.frontmostApplication()
+		teams:activate()
+		hs.timer.doAfter(0.1, function()
+			hs.eventtap.keyStroke({ "cmd", "shift" }, "H")
+			hs.timer.doAfter(0.1, function()
+				if previousApp and previousApp ~= teams then
+					previousApp:activate()
+				end
+			end)
+		end)
+		hs.notify.show("Teams", "", "Call Ended")
+	else
+		hs.notify.show("Teams", "", "Microsoft Teams is not running")
+	end
+end)
