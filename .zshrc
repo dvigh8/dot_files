@@ -162,7 +162,6 @@ alias vi="nvim"
 alias db="databricks"
 bindkey '^R' fzf-history-widget
 PATH="$PATH":"/Applications/CMake.app/Contents/bin:$HOME/.cargo/bin"
-export VIRTUAL_ENV=$HOME/.venv/
 export XDG_CONFIG_HOME=$HOME/.config/
 alias dbb="databricks bundle"
 alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
