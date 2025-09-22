@@ -145,7 +145,10 @@ else
 fi
 eval "$(zoxide init zsh)"
 alias te='cd "$(lf -print-last-dir "$@")"'
-alias cd='z'
+# Only set the alias if not in Claude CLI context
+if [ -z "$CLAUDE_CLI" ]; then
+    alias cd='z'
+fi
 alias ls='eza'
 
 function lst(){
@@ -222,3 +225,36 @@ auto_venv() {
 }
 
 alias venv='auto_venv'
+c_heic(){
+    for f in *.heic; do
+        magick "$f" -define jpeg:extent=5MB "${f%.heic}.jpg"
+    done
+}
+alias heic='magick mogrify -format jpg $(pwd)/*.heic'
+data_dir() {
+  local project_dir="${1:-$PWD}"
+
+  # Find the git root (quietly fails if not in a repo)
+  local git_root
+  echo "Finding git root in $project_dir"
+  git_root=$(git -C "$project_dir" rev-parse --show-toplevel 2>/dev/null) || {
+    echo "Error: No git repo found in $project_dir" >&2
+    return 1
+  }
+
+  # Parent of git root, where "data" directory should live
+  local data_dir="$(dirname "$git_root")/data"
+
+  # Create if missing
+  if [[ ! -d "$data_dir" ]]; then
+    mkdir -p "$data_dir" || {
+      echo "Error: Failed to create $data_dir" >&2
+      return 1
+    }
+    echo "Created data directory at $data_dir"
+  fi
+
+  # Print the path
+  echo "$data_dir"
+}
+alias cdd='cd "$(data_dir)"'
