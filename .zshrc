@@ -232,29 +232,84 @@ c_heic(){
 }
 alias heic='magick mogrify -format jpg $(pwd)/*.heic'
 data_dir() {
-  local project_dir="${1:-$PWD}"
+  local start="${1:-$PWD}"
+  
+  # Step 0: if DATA_DIR env var is set, prefer it
+  if [[ -n "$DATA_DIR" ]]; then
+    local target="${DATA_DIR:A}"  # resolve to absolute path
+    if [[ ! -d "$target" ]]; then
+      mkdir -p "$target" || { echo "Error: Failed to create $target" >&2; return 1; }
+      echo "Created data directory at $target" >&2
+    fi
+    echo "$target"
+    return 0
+  fi 
 
-  # Find the git root (quietly fails if not in a repo)
+  local dir="${start:A}"   # absolute path (resolves symlinks)
+
+  # Step 1 & 2: walk upward for nearest data/
+  while true; do
+    if [[ -d "$dir/data" ]]; then
+      echo "$dir/data"
+      return 0
+    fi
+    local parent="${dir:h}"
+    if [[ "$parent" == "$dir" ]]; then
+      break  # reached filesystem root
+    fi
+    dir="$parent"
+  done
+
+  # Step 3: must be inside a git repo, else fail
   local git_root
-  echo "Finding git root in $project_dir"
-  git_root=$(git -C "$project_dir" rev-parse --show-toplevel 2>/dev/null) || {
-    echo "Error: No git repo found in $project_dir" >&2
+  git_root=$(git -C "$start" rev-parse --show-toplevel 2>/dev/null) || {
+    echo "Error: Not inside a Git repository. No data/ directory created." >&2
     return 1
   }
 
-  # Parent of git root, where "data" directory should live
-  local data_dir="$(dirname "$git_root")/data"
+  local git_parent="${git_root:h}"
+  local repo_name="${git_root:t}"
+  local target="$git_parent/data/$repo_name"
 
-  # Create if missing
-  if [[ ! -d "$data_dir" ]]; then
-    mkdir -p "$data_dir" || {
-      echo "Error: Failed to create $data_dir" >&2
-      return 1
-    }
-    echo "Created data directory at $data_dir"
+  if [[ ! -d "$target" ]]; then
+    mkdir -p "$target" || { echo "Error: Failed to create $target" >&2; return 1; }
+    echo "Created data directory at $target" >&2
   fi
 
-  # Print the path
-  echo "$data_dir"
+  echo "$target"
 }
+alias dd='data_dir'
 alias cdd='cd "$(data_dir)"'
+mvtdd() {
+  if [[ $# -lt 1 ]]; then
+    echo "Usage: mvtdd <file-or-folder> [more files...]"
+    return 1
+  fi
+
+  local target
+  target=$(data_dir) || return 1
+
+  # Use -i so mv asks before overwriting existing files
+  mv -i "$@" "$target"/
+  echo "Moved $@ → $target/"
+}
+lsdd() {
+  local target
+  target=$(data_dir) || return 1
+  echo "Data directory: $target"
+
+  # If no extra args, just list the root data_dir
+  if [[ $# -eq 0 ]]; then
+    ls -la "$target"
+  else
+    for sub in "$@"; do
+      if [[ -d "$target/$sub" || -f "$target/$sub" ]]; then
+        echo "--- $target/$sub ---"
+        ls -la "$target/$sub"
+      else
+        echo "Warning: $target/$sub does not exist" >&2
+      fi
+    done
+  fi
+}
+alias ydd='yazi $(data_dir)'
