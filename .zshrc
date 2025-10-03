@@ -69,16 +69,20 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # see 'man strftime' for details.
 HIST_STAMPS="yyyy-mm-dd"
  
-# Set the history file location
-HISTFILE=~/.zsh_history
+HISTFILE="$HOME/.zsh_history"
+HISTSIZE=200000       # in‑memory lines
+SAVEHIST=200000       # saved to file
 
-# Set history size
-HISTSIZE=10000
-SAVEHIST=10000
-
-# Optional: Share history across sessions
-setopt SHARE_HISTORY
+setopt APPEND_HISTORY           # append (not overwrite)
+setopt INC_APPEND_HISTORY       # write commands as they are entered
+setopt SHARE_HISTORY            # share history across sessions
+setopt HIST_EXPIRE_DUPS_FIRST   # when trimming, drop older dups
+setopt HIST_IGNORE_DUPS         # ignore duplicate adjacent entries
+setopt HIST_IGNORE_ALL_DUPS     # remove older duplicates
+setopt HIST_REDUCE_BLANKS       # trim superfluous spaces
+setopt EXTENDED_HISTORY         # save timestamps with history entries
 # Would you like to use another custom folder than $ZSH/custom?
+
 # ZSH_CUSTOM=/path/to/new-custom-folder
 
 # Which plugins would you like to load?
@@ -105,11 +109,11 @@ source $ZSH/oh-my-zsh.sh
 # export LANG=en_US.UTF-8
 
 # Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='mvim'
-# fi
+if [[ -n $SSH_CONNECTION ]]; then
+  export EDITOR='vim'
+else
+  export EDITOR='nvim'
+fi
 
 # Compilation flags
 # export ARCHFLAGS="-arch $(uname -m)"
@@ -139,6 +143,8 @@ if [[ $(uname) == "Linux" ]]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
   source <(fzf --zsh)
 else
+
+  [ -f ~/.fzf.zsh ] && source ~/.fzf.zsh
   [ -f /opt/homebrew/opt/fzf/shell/completion.zsh ] && source /opt/homebrew/opt/fzf/shell/completion.zsh
   [ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ] && source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
   export PATH=/opt/homebrew/bin:$PATH
@@ -146,9 +152,6 @@ fi
 eval "$(zoxide init zsh)"
 alias te='cd "$(lf -print-last-dir "$@")"'
 # Only set the alias if not in Claude CLI context
-if [ -z "$CLAUDE_CLI" ]; then
-    alias cd='z'
-fi
 alias ls='eza'
 
 function lst(){
@@ -164,6 +167,7 @@ alias cluster="$HOME/venv/bin/python -m cluster_manager"
 alias vi="nvim"
 alias db="databricks"
 bindkey '^R' fzf-history-widget
+bindkey '^E'  fzf-cd-widget
 PATH="$PATH":"/Applications/CMake.app/Contents/bin:$HOME/.cargo/bin"
 export XDG_CONFIG_HOME=$HOME/.config/
 alias dbb="databricks bundle"
@@ -313,3 +317,11 @@ lsdd() {
   fi
 }
 alias ydd='yazi $(data_dir)'
+source "$HOME/.commands_manager"
+alias rzsh='source ~/.zshrc'
+alias ezsh='$EDITOR ~/.zshrc' #will open .zshrc for editing from any directory
+
+# quick search in files
+ff() { rg -n "$@"; }
+
+
