@@ -1,0 +1,301 @@
+# --- commands manager (bash + zsh) ------------------------------
+# Supports:
+# - .commands discovery (walk up)
+# - multiline function declarations
+# - layered restore of prior aliases/funcs/vars on `dcm`
+# Works in: Zsh (5+) and Bash (4+)
+
+# Shell detection
+if [[ -n "$ZSH_VERSION" ]]; then
+  __SHELL=zsh
+elif [[ -n "$BASH_VERSION" ]]; then
+  __SHELL=bash
+else
+  echo "Unsupported shell; this script needs bash or zsh." >&2
+  return 1 2>/dev/null || exit 1
+fi
+
+# ------------------ Globals ------------------
+CURRENT_COMMANDS_FILE=""
+# names defined by the active .commands
+CURRENT_COMMANDS_VARS=()
+CURRENT_COMMANDS_ALIASES=()
+CURRENT_COMMANDS_FUNCS=()
+
+# snapshots of prior definitions (to restore on dcm)
+# name -> definition text OR "__UNSET__"
+declare -A PREV_VARS PREV_ALIASES PREV_FUNCS
+
+# ------------------ Helpers ------------------
+_dirparent() {
+  # portable dirname (zsh has ${d:h}, we keep it POSIXy)
+  command dirname -- "$1" 2>/dev/null || echo "${1%/*}"
+}
+
+_indirect_get() {
+  # prints value of variable by name, safely
+  local __name="$1"
+  if [[ "$__SHELL" == zsh ]]; then
+    # zsh indirect + q for escape when printing later
+    eval "print -r -- \${${__name}:+\"\${(qq)${__name}}\"}" 2>/dev/null
+  else
+    # bash: ${!name}; we will quote with printf %q when showing
+    printf '%s' "${!__name}"
+  fi
+}
+
+_var_typeset_p() {
+  # echo "typeset/declare -p" output for a var name, or empty on missing
+  local n="$1"
+  if [[ "$__SHELL" == zsh ]]; then
+    typeset -p "$n" 2>/dev/null
+  else
+    declare -p "$n" 2>/dev/null
+  fi
+}
+
+_func_dump() {
+  # dump a function definition by name
+  local n="$1"
+  if [[ "$__SHELL" == zsh ]]; then
+    functions "$n" 2>/dev/null
+  else
+    declare -f "$n" 2>/dev/null
+  fi
+}
+
+_unfunction() {
+  # remove a function by name
+  local n="$1"
+  if [[ "$__SHELL" == zsh ]]; then
+    unfunction "$n" 2>/dev/null
+  else
+    unset -f "$n" 2>/dev/null
+  fi
+}
+
+_printf_q() {
+  # portable-ish quoting for display
+  # both bash/zsh support printf %q
+  printf '%q' "$1"
+}
+
+# ------------------ Core ------------------
+
+# Find .commands by walking up from $PWD
+_find_commands_file() {
+  local d="$PWD"
+  while [[ "$d" != "/" && -n "$d" ]]; do
+    if [[ -f "$d/.commands" ]]; then
+      printf '%s\n' "$d/.commands"
+      return 0
+    fi
+    d="$(_dirparent "$d")"
+  done
+  return 1
+}
+
+# Parse names defined in a .commands (vars, aliases, funcs)
+# (Multiline-safe for functions; brace may be on next line)
+_parse_commands_defs() {
+  local file="$1"
+
+  if [[ -n "$ZSH_VERSION" ]]; then
+    # ----- zsh path (no mapfile) -----
+    # Variables (export FOO=... or FOO=...)
+    VARS=(${(f)"$(command grep -E '^[[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=' "$file" 2>/dev/null \
+                 | command sed -E 's/^[[:space:]]*export[[:space:]]+//; s/[[:space:]]*=.*$//' )"})
+
+    # Aliases
+    ALIASES=(${(f)"$(command grep -E '^[[:space:]]*alias[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=' "$file" 2>/dev/null \
+                 | command sed -E 's/^[[:space:]]*alias[[:space:]]+//; s/[[:space:]]*=.*$//' )"})
+
+    # Functions: name() [brace optional] and function name [() optional; brace optional]
+    local _funcs_a _funcs_b
+    _funcs_a=(${(f)"$(command grep -E '^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\(\)[[:space:]]*(\{)?[[:space:]]*$' "$file" 2>/dev/null \
+                        | command sed -E 's/^[[:space:]]*//; s/[[:space:]]*\(\).*$//' )"})
+    _funcs_b=(${(f)"$(command grep -E '^[[:space:]]*function[[:space:]]+[A-Za-z_][A-Za-z0-9_]*([[:space:]]*\(\))?[[:space:]]*(\{)?[[:space:]]*$' "$file" 2>/dev/null \
+                        | command sed -E 's/^[[:space:]]*function[[:space:]]+//; s/[[:space:]]*\(\).*//; s/[[:space:]]*\{[[:space:]]*$//' )"})
+    FUNCS=("${_funcs_a[@]}" "${_funcs_b[@]}")
+
+  else
+    # ----- bash path (uses mapfile) -----
+    mapfile -t VARS < <(
+      command grep -E '^[[:space:]]*(export[[:space:]]+)?[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=' "$file" 2>/dev/null |
+      command sed -E 's/^[[:space:]]*export[[:space:]]+//; s/[[:space:]]*=.*$//'
+    ) || VARS=()
+
+    mapfile -t ALIASES < <(
+      command grep -E '^[[:space:]]*alias[[:space:]]+[A-Za-z_][A-Za-z0-9_]*[[:space:]]*=' "$file" 2>/dev/null |
+      command sed -E 's/^[[:space:]]*alias[[:space:]]+//; s/[[:space:]]*=.*$//'
+    ) || ALIASES=()
+
+    local _funcs_a=() _funcs_b=()
+    mapfile -t _funcs_a < <(
+      command grep -E '^[[:space:]]*[A-Za-z_][A-Za-z0-9_]*[[:space:]]*\(\)[[:space:]]*(\{)?[[:space:]]*$' "$file" 2>/dev/null |
+      command sed -E 's/^[[:space:]]*//; s/[[:space:]]*\(\).*$//'
+    ) || _funcs_a=()
+    mapfile -t _funcs_b < <(
+      command grep -E '^[[:space:]]*function[[:space:]]+[A-Za-z_][A-Za-z0-9_]*([[:space:]]*\(\))?[[:space:]]*(\{)?[[:space:]]*$' "$file" 2>/dev/null |
+      command sed -E 's/^[[:space:]]*function[[:space:]]+//; s/[[:space:]]*\(\).*//; s/[[:space:]]*\{[[:space:]]*$//'
+    ) || _funcs_b=()
+    FUNCS=("${_funcs_a[@]}" "${_funcs_b[@]}")
+  fi
+}
+
+# Snapshot any preexisting defs for names we are about to manage
+_snapshot_priors() {
+  PREV_VARS=(); PREV_ALIASES=(); PREV_FUNCS=()
+
+  local v a f out
+  for v in "${VARS[@]}"; do
+    out="$(_var_typeset_p "$v")"
+    if [[ -n "$out" ]]; then PREV_VARS["$v"]="$out"; else PREV_VARS["$v"]="__UNSET__"; fi
+  done
+  for a in "${ALIASES[@]}"; do
+    out="$(alias "$a" 2>/dev/null || true)"
+    if [[ -n "$out" ]]; then PREV_ALIASES["$a"]="$out"; else PREV_ALIASES["$a"]="__UNSET__"; fi
+  done
+  for f in "${FUNCS[@]}"; do
+    out="$(_func_dump "$f")"
+    if [[ -n "$out" ]]; then PREV_FUNCS["$f"]="$out"; else PREV_FUNCS["$f"]="__UNSET__"; fi
+  done
+}
+
+# Restore snapshot on dcm
+_restore_priors() {
+  local name prev
+
+  # Vars
+  for name in "${CURRENT_COMMANDS_VARS[@]}"; do
+    prev="${PREV_VARS[$name]}"
+    if [[ -z "$prev" || "$prev" == "__UNSET__" ]]; then
+      unset "$name" 2>/dev/null
+    else
+      eval -- "$prev"
+    fi
+  done
+
+  # Aliases
+  for name in "${CURRENT_COMMANDS_ALIASES[@]}"; do
+    prev="${PREV_ALIASES[$name]}"
+    if [[ -z "$prev" || "$prev" == "__UNSET__" ]]; then
+      unalias "$name" 2>/dev/null
+    else
+      eval -- "$prev"
+    fi
+  done
+
+  # Functions
+  for name in "${CURRENT_COMMANDS_FUNCS[@]}"; do
+    prev="${PREV_FUNCS[$name]}"
+    if [[ -z "$prev" || "$prev" == "__UNSET__" ]]; then
+      _unfunction "$name"
+    else
+      eval -- "$prev"
+    fi
+  done
+
+  PREV_VARS=(); PREV_ALIASES=(); PREV_FUNCS=()
+}
+
+# Disable current commands: restore snapshot
+dcm() {
+  if [[ -z "$CURRENT_COMMANDS_FILE" ]]; then
+    echo "dcm: no .commands currently enabled."
+    return 0
+  fi
+
+  _restore_priors
+
+  CURRENT_COMMANDS_VARS=()
+  CURRENT_COMMANDS_ALIASES=()
+  CURRENT_COMMANDS_FUNCS=()
+  echo "Disabled: $CURRENT_COMMANDS_FILE"
+  CURRENT_COMMANDS_FILE=""
+}
+
+# Show current commands + env vars
+scm() {
+  if [[ -z "$CURRENT_COMMANDS_FILE" ]]; then
+    echo "No .commands enabled."
+    return 0
+  fi
+
+  echo "Current commands file: $CURRENT_COMMANDS_FILE"
+
+  if ((${#CURRENT_COMMANDS_VARS[@]})); then
+    echo
+    echo "# Exported/defined variables"
+    local v val
+    for v in "${CURRENT_COMMANDS_VARS[@]}"; do
+      if [[ "$__SHELL" == zsh ]]; then
+        # zsh: value already q-quoted via ${(qq)}
+        val="$(_indirect_get "$v")"
+        printf '%s=%s\n' "$v" "$val"
+      else
+        # bash: fetch then %q-quote for safe display
+        val="${!v}"
+        printf '%s=%s\n' "$v" "$(_printf_q "$val")"
+      fi
+    done
+  fi
+
+  if ((${#CURRENT_COMMANDS_ALIASES[@]})); then
+    echo
+    echo "# Aliases"
+    # Build alternation safely
+    local pat
+    pat="$(printf '%s|' "${CURRENT_COMMANDS_ALIASES[@]}" | sed 's/|$//')"
+    alias | command grep -E "^(${pat})=" || true
+  fi
+
+  if ((${#CURRENT_COMMANDS_FUNCS[@]})); then
+    echo
+    echo "# Functions"
+    printf '%s\n' "${CURRENT_COMMANDS_FUNCS[@]}"
+  fi
+}
+
+# Enable commands: walk up, (optionally) disable previous, then source new
+ecm() {
+  local file
+  if ! file="$(_find_commands_file)"; then
+    echo "ecm: no .commands found walking up from $PWD"
+    return 1
+  fi
+
+  # If another file is active, disable it first
+  if [[ -n "$CURRENT_COMMANDS_FILE" ]]; then
+    _parse_commands_defs "$CURRENT_COMMANDS_FILE"
+    CURRENT_COMMANDS_VARS=("${VARS[@]}")
+    CURRENT_COMMANDS_ALIASES=("${ALIASES[@]}")
+    CURRENT_COMMANDS_FUNCS=("${FUNCS[@]}")
+    dcm
+  fi
+
+  # Parse the new file to know which names it will touch
+  _parse_commands_defs "$file"
+
+  # Snapshot what currently exists under those names
+  _snapshot_priors
+
+  # Start clean for those names
+  local n
+  for n in "${VARS[@]}";    do unset "$n" 2>/dev/null; done
+  for n in "${ALIASES[@]}"; do unalias "$n" 2>/dev/null; done
+  for n in "${FUNCS[@]}";   do _unfunction "$n" 2>/dev/null; done
+
+  # Source the file (enables env vars / aliases / funcs)
+  # shellchecdmk disable=SC1090
+  source "$file"
+
+  # Persist state for scm/dcm
+  CURRENT_COMMANDS_FILE="$file"
+  CURRENT_COMMANDS_VARS=("${VARS[@]}")
+  CURRENT_COMMANDS_ALIASES=("${ALIASES[@]}")
+  CURRENT_COMMANDS_FUNCS=("${FUNCS[@]}")
+
+  echo "Enabled: $CURRENT_COMMANDS_FILE"
+}
+# --------------------------------------------------------------
