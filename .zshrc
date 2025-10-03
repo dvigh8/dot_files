@@ -317,7 +317,7 @@ lsdd() {
   fi
 }
 alias ydd='yazi $(data_dir)'
-source "$HOME/.commands_manager"
+[ -f "$HOME/.commands_manager" ] && source "$HOME/.commands_manager"
 alias rzsh='source ~/.zshrc'
 alias ezsh='$EDITOR ~/.zshrc' #will open .zshrc for editing from any directory
 
