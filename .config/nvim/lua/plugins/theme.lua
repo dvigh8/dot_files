@@ -1,0 +1,1 @@
+/home/djv/.config/omarchy/current/theme/neovim.lua
