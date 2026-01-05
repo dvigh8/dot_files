@@ -1,0 +1,238 @@
+# Neovim - default to current directory
+n() {
+  if [[ $# -eq 0 ]]; then
+    nvim .
+  else
+    nvim "$@"
+  fi
+}
+
+# Yazi with directory change on exit
+y() {
+  local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+  yazi "$@" --cwd-file="$tmp"
+  IFS= read -r -d '' cwd < "$tmp"
+  [[ -n "$cwd" ]] && [[ "$cwd" != "$PWD" ]] && builtin cd -- "$cwd"
+  rm -f -- "$tmp"
+}
+
+# Tree listing with optional depth
+lst() {
+  if [[ -n "$1" ]]; then
+    eza -l --tree --level="$1" --git --icons=auto
+  else
+    eza -l --git --icons=auto
+  fi
+}
+
+# Zoxide wrapper - use builtin cd for directories, z for queries
+zd() {
+  if [[ $# -eq 0 ]]; then
+    builtin cd ~ && return
+  elif [[ -d "$1" ]]; then
+    builtin cd "$1"
+  else
+    z "$@" && printf "\U000F17A9 " && pwd || echo "Error: Directory not found"
+  fi
+}
+
+# Quick ripgrep search
+ff() {
+  rg -n "$@"
+}
+
+# Find and activate virtual environment
+find_and_activate_venv() {
+  local current_dir="$PWD"
+  local venv_dirs=(".venv" "venv" ".virtualenv" "virtualenv")
+
+  while [[ "$current_dir" != "/" ]]; do
+    for venv_name in "${venv_dirs[@]}"; do
+      if [[ -d "$current_dir/$venv_name" ]] && [[ -f "$current_dir/$venv_name/bin/activate" ]]; then
+        echo "Activating venv: $current_dir/$venv_name"
+        source "$current_dir/$venv_name/bin/activate"
+        return 0
+      fi
+    done
+    current_dir="$(dirname "$current_dir")"
+  done
+
+  echo "No virtual environment found in parent directories"
+  return 1
+}
+
+# Deactivate current venv if any, then activate the found one
+auto_venv() {
+  [[ -n "$VIRTUAL_ENV" ]] && deactivate
+  find_and_activate_venv
+}
+
+# Data directory - find or create data directory for current project
+data_dir() {
+  local start="${1:-$PWD}"
+
+  if [[ -n "$DATA_DIR" ]]; then
+    local target="${DATA_DIR:A}"
+    if [[ ! -d "$target" ]]; then
+      mkdir -p "$target" || { echo "Error: Failed to create $target" >&2; return 1; }
+      echo "Created data directory at $target" >&2
+    fi
+    echo "$target"
+    return 0
+  fi
+
+  local dir="${start:A}"
+
+  while true; do
+    if [[ -d "$dir/data" ]]; then
+      echo "$dir/data"
+      return 0
+    fi
+    local parent="${dir:h}"
+    if [[ "$parent" == "$dir" ]]; then
+      break
+    fi
+    dir="$parent"
+  done
+
+  local git_root
+  git_root=$(git -C "$start" rev-parse --show-toplevel 2>/dev/null) || {
+    echo "Error: Not inside a Git repository. No data/ directory created." >&2
+    return 1
+  }
+
+  local git_parent="${git_root:h}"
+  local repo_name="${git_root:t}"
+  local target="$git_parent/data/$repo_name"
+
+  if [[ ! -d "$target" ]]; then
+    mkdir -p "$target" || { echo "Error: Failed to create $target" >&2; return 1; }
+    echo "Created data directory at $target" >&2
+  fi
+
+  echo "$target"
+}
+
+# Move files to data directory
+mvtdd() {
+  if [[ $# -lt 1 ]]; then
+    echo "Usage: mvtdd <file-or-folder> [more files...]"
+    return 1
+  fi
+
+  local target
+  target=$(data_dir) || return 1
+
+  mv -i "$@" "$target"/
+  echo "Moved $@ -> $target/"
+}
+
+# List data directory contents
+lsdd() {
+  local target
+  target=$(data_dir) || return 1
+  echo "Data directory: $target"
+
+  if [[ $# -eq 0 ]]; then
+    ls -la "$target"
+  else
+    for sub in "$@"; do
+      if [[ -d "$target/$sub" || -f "$target/$sub" ]]; then
+        echo "--- $target/$sub ---"
+        ls -la "$target/$sub"
+      else
+        echo "Warning: $target/$sub does not exist" >&2
+      fi
+    done
+  fi
+}
+
+# HEIC to JPG conversion
+c_heic() {
+  for f in *.heic; do
+    magick "$f" -define jpeg:extent=5MB "${f%.heic}.jpg"
+  done
+}
+
+# Compression
+compress() {
+  tar -czf "${1%/}.tar.gz" "${1%/}"
+}
+
+# Image optimization
+img2jpg() {
+  local img="$1"
+  shift
+  magick "$img" "$@" -quality 95 -strip "${img%.*}-optimized.jpg"
+}
+
+img2jpg-small() {
+  local img="$1"
+  shift
+  magick "$img" "$@" -resize '1080x>' -quality 95 -strip "${img%.*}-optimized.jpg"
+}
+
+img2png() {
+  local img="$1"
+  shift
+  magick "$img" "$@" -strip -define png:compression-filter=5 \
+    -define png:compression-level=9 \
+    -define png:compression-strategy=1 \
+    -define png:exclude-chunk=all \
+    "${img%.*}-optimized.png"
+}
+
+# Video transcoding
+transcode-video-1080p() {
+  ffmpeg -i "$1" -vf scale=1920:1080 -c:v libx264 -preset fast -crf 23 -c:a copy "${1%.*}-1080p.mp4"
+}
+
+transcode-video-4K() {
+  ffmpeg -i "$1" -c:v libx265 -preset slow -crf 24 -c:a aac -b:a 192k "${1%.*}-optimized.mp4"
+}
+
+# Linux-only functions
+if [[ $(uname) == "Linux" ]]; then
+  open() {
+    xdg-open "$@" >/dev/null 2>&1 &
+  }
+
+  iso2sd() {
+    if [[ $# -ne 2 ]]; then
+      echo "Usage: iso2sd <input_file> <output_device>"
+      echo "Example: iso2sd ~/Downloads/ubuntu-25.04-desktop-amd64.iso /dev/sda"
+      echo -e "\nAvailable SD cards:"
+      lsblk -d -o NAME | grep -E '^sd[a-z]' | awk '{print "/dev/"$1}'
+    else
+      sudo dd bs=4M status=progress oflag=sync if="$1" of="$2"
+      sudo eject "$2"
+    fi
+  }
+
+  format-drive() {
+    if [[ $# -ne 2 ]]; then
+      echo "Usage: format-drive <device> <name>"
+      echo "Example: format-drive /dev/sda 'My Stuff'"
+      echo -e "\nAvailable drives:"
+      lsblk -d -o NAME -n | awk '{print "/dev/"$1}'
+    else
+      echo "WARNING: This will completely erase all data on $1 and label it '$2'."
+      read -rp "Are you sure you want to continue? (y/N): " confirm
+
+      if [[ "$confirm" =~ ^[Yy]$ ]]; then
+        sudo wipefs -a "$1"
+        sudo dd if=/dev/zero of="$1" bs=1M count=100 status=progress
+        sudo parted -s "$1" mklabel gpt
+        sudo parted -s "$1" mkpart primary 1MiB 100%
+
+        local partition="$([[ $1 == *"nvme"* ]] && echo "${1}p1" || echo "${1}1")"
+        sudo partprobe "$1" || true
+        sudo udevadm settle || true
+
+        sudo mkfs.exfat -n "$2" "$partition"
+
+        echo "Drive $1 formatted as exFAT and labeled '$2'."
+      fi
+    fi
+  }
+fi

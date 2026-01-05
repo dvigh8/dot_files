@@ -1,0 +1,26 @@
+# XDG Base Directory
+export XDG_CONFIG_HOME="$HOME/.config"
+
+# Editor
+if [[ -n $SSH_CONNECTION ]]; then
+  export EDITOR='vim'
+else
+  export EDITOR='nvim'
+fi
+export SUDO_EDITOR="$EDITOR"
+
+# Theme
+export BAT_THEME=ansi
+
+# PATH - Platform specific
+if [[ $(uname) == "Darwin" ]]; then
+  export PATH="/opt/homebrew/bin:$PATH"
+  [[ -d "/Applications/CMake.app/Contents/bin" ]] && export PATH="$PATH:/Applications/CMake.app/Contents/bin"
+elif [[ $(uname) == "Linux" ]]; then
+  [[ -d "/home/linuxbrew/.linuxbrew/bin" ]] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+fi
+
+# PATH - Common additions
+[[ -d "$HOME/.cargo/bin" ]] && export PATH="$PATH:$HOME/.cargo/bin"
+[[ -d "$HOME/.local/bin" ]] && export PATH="$PATH:$HOME/.local/bin"
+[[ -d "$HOME/.lmstudio/bin" ]] && export PATH="$PATH:$HOME/.lmstudio/bin"

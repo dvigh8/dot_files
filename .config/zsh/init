@@ -1,0 +1,51 @@
+# Starship prompt
+if command -v starship &> /dev/null; then
+  eval "$(starship init zsh)"
+fi
+
+# Zoxide
+if command -v zoxide &> /dev/null; then
+  eval "$(zoxide init zsh)"
+fi
+
+# Mise (runtime version manager)
+if command -v mise &> /dev/null; then
+  eval "$(mise activate zsh)"
+fi
+
+# FZF
+if command -v fzf &> /dev/null; then
+  if [[ $(uname) == "Darwin" ]]; then
+    [[ -f ~/.fzf.zsh ]] && source ~/.fzf.zsh
+    [[ -f /opt/homebrew/opt/fzf/shell/completion.zsh ]] && source /opt/homebrew/opt/fzf/shell/completion.zsh
+    [[ -f /opt/homebrew/opt/fzf/shell/key-bindings.zsh ]] && source /opt/homebrew/opt/fzf/shell/key-bindings.zsh
+  elif [[ $(uname) == "Linux" ]]; then
+    [[ -f /usr/share/fzf/completion.zsh ]] && source /usr/share/fzf/completion.zsh
+    [[ -f /usr/share/fzf/key-bindings.zsh ]] && source /usr/share/fzf/key-bindings.zsh
+  fi
+
+  # Ensure fzf keybindings work with vi-mode
+  bindkey '^R' fzf-history-widget
+  bindkey '^T' fzf-file-widget
+  bindkey '^E' fzf-cd-widget
+fi
+
+# Azure CLI completions
+if command -v az &> /dev/null; then
+  autoload bashcompinit && bashcompinit
+  if [[ $(uname) == "Darwin" ]]; then
+    [[ -f "$(brew --prefix)/etc/bash_completion.d/az" ]] && source "$(brew --prefix)/etc/bash_completion.d/az"
+  elif [[ $(uname) == "Linux" ]]; then
+    [[ -f /etc/bash_completion.d/azure-cli ]] && source /etc/bash_completion.d/azure-cli
+  fi
+fi
+
+# Terraform completions
+if command -v terraform &> /dev/null; then
+  complete -o nospace -C terraform terraform
+fi
+
+# Source additional configs if they exist
+[[ -f "$HOME/.envs" ]] && source "$HOME/.envs"
+[[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"
+[[ -f "$HOME/.commands_manager" ]] && source "$HOME/.commands_manager"

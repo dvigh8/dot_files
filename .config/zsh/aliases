@@ -1,0 +1,55 @@
+# File system - eza
+if command -v eza &> /dev/null; then
+  alias ls='eza -lh --group-directories-first --icons=auto'
+  alias lsa='ls -a'
+  alias lt='eza -h --tree --level=2 --long --icons=auto --git'
+  alias lta='lt -a'
+fi
+
+# Directory navigation
+alias cd="zd"
+alias ..='cd ..'
+alias ...='cd ../..'
+alias ....='cd ../../..'
+
+# Git
+alias g='lazygit'
+alias lz='lazygit'
+alias gcm='git commit -m'
+alias gcam='git commit -a -m'
+alias gcad='git commit -a --amend'
+
+# Editors
+alias vi='nvim'
+
+# Tools
+alias d='docker'
+alias db='databricks'
+alias dbb='databricks bundle'
+alias workflow='gcloud dataproc workflow-templates'
+
+# Dotfiles management (bare git repo)
+alias config='/usr/bin/git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
+alias dot='GIT_DIR=$HOME/.dotfiles/ GIT_WORK_TREE=$HOME lazygit'
+alias dotall='GIT_DIR=$HOME/.dotfiles/ GIT_WORK_TREE=$HOME GIT_CONFIG_PARAMETERS="'\''status.showUntrackedFiles=normal'\''" lazygit'
+
+# Data directory helpers
+alias ddd='data_dir'
+alias cdd='cd "$(data_dir)"'
+alias ydd='yazi "$(data_dir)"'
+
+# Shell config
+alias rzsh='source ~/.zshrc'
+alias ezsh='$EDITOR ~/.config/zsh/'
+
+# Compression
+alias decompress='tar -xzf'
+
+# Image conversion
+alias heic='magick mogrify -format jpg *.heic'
+
+# File manager navigation
+alias te='cd "$(lf -print-last-dir "$@")"'
+
+# Venv activation
+alias venv='auto_venv'
