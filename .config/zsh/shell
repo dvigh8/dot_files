@@ -10,8 +10,8 @@ setopt HIST_IGNORE_DUPS
 setopt HIST_IGNORE_ALL_DUPS
 setopt HIST_IGNORE_SPACE
 setopt HIST_REDUCE_BLANKS
-setopt HIST_SAVE_NO_DUPS
 setopt EXTENDED_HISTORY
+setopt HIST_SAVE_NO_DUPS
 
 # Directory navigation
 setopt AUTO_CD
@@ -35,7 +35,6 @@ export KEYTIMEOUT=1
 
 # Restore some emacs-style bindings for convenience
 bindkey '^A' beginning-of-line
-bindkey '^E' end-of-line
 bindkey '^K' kill-line
 bindkey '^W' backward-kill-word
 bindkey '^U' kill-whole-line

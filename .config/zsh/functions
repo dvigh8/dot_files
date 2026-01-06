@@ -274,3 +274,19 @@ if [[ $(uname) == "Linux" ]]; then
     fi
   }
 fi
+
+# Kill process on port
+killport() {
+  local port="$1"
+  if [[ -z "$port" ]]; then
+    echo "Usage: killport <port>"
+    return 1
+  fi
+  local pids=$(lsof -ti:"$port")
+  if [[ -n "$pids" ]]; then
+    echo "Killing processes on port $port: $pids"
+    echo "$pids" | xargs kill -9
+  else
+    echo "No process found on port $port"
+  fi
+}

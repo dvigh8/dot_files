@@ -5,6 +5,7 @@ fi
 
 if command -v op &> /dev/null; then
   eval "$(op signin)"
+  op_load_global
 fi
 
 # Zoxide

@@ -54,4 +54,19 @@ alias te='cd "$(lf -print-last-dir "$@")"'
 # Venv activation
 alias venv='auto_venv'
 
+# Zellij
 alias za="zellij attach"
+
+# uv (Python package manager)
+alias uvi='uv pip install'
+alias uvie='uv pip install -e .'
+alias uvr='uv run'
+alias uvs='uv sync'
+alias uva='uv add'
+alias uvad='uv add --dev'
+alias uvl='uv lock'
+# Modern CLI replacements
+alias cat='bat --paging=never'
+alias diff='delta'
+# Network
+alias ports='lsof -iTCP -sTCP:LISTEN -P -n'
