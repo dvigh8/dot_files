@@ -3,6 +3,10 @@ if command -v starship &> /dev/null; then
   eval "$(starship init zsh)"
 fi
 
+if command -v op &> /dev/null; then
+  eval "$(op signin)"
+fi
+
 # Zoxide
 if command -v zoxide &> /dev/null; then
   eval "$(zoxide init zsh)"

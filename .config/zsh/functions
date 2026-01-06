@@ -51,11 +51,35 @@ find_and_activate_venv() {
       if [[ -d "$current_dir/$venv_name" ]] && [[ -f "$current_dir/$venv_name/bin/activate" ]]; then
         echo "Activating venv: $current_dir/$venv_name"
         source "$current_dir/$venv_name/bin/activate"
+        
+        # Set display name for Starship
+        if [[ "$venv_name" == ".venv" || "$venv_name" == "venv" ]]; then
+          local project_dir="${current_dir:t}"  # parent dir name
+          
+          # Check if in a git worktree
+          if git -C "$current_dir" rev-parse --is-inside-work-tree &>/dev/null; then
+            local git_common_dir="$(git -C "$current_dir" rev-parse --git-common-dir 2>/dev/null)"
+            # If git-common-dir contains "/worktrees/", we're in a worktree
+            if [[ "$git_common_dir" == *"/worktrees/"* ]]; then
+              # Extract repo name from common dir (e.g., /projects/myrepo/worktrees -> myrepo)
+              local repo_root="${git_common_dir:h:h}"  # go up twice from .git/worktrees/name
+              local repo_name="${repo_root:t}"
+              export VENV_PROJECT="${repo_name}-${project_dir}"
+            else
+              export VENV_PROJECT="$project_dir"
+            fi
+          else
+            export VENV_PROJECT="$project_dir"
+          fi
+        else
+          export VENV_PROJECT="$venv_name"
+        fi
+        
         return 0
       fi
     done
     current_dir="$(dirname "$current_dir")"
-  done
+  done  
 
   echo "No virtual environment found in parent directories"
   return 1
@@ -63,8 +87,22 @@ find_and_activate_venv() {
 
 # Deactivate current venv if any, then activate the found one
 auto_venv() {
-  [[ -n "$VIRTUAL_ENV" ]] && deactivate
+  if [[ -n "$VIRTUAL_ENV" ]]; then
+    deactivate
+    unset VENV_PROJECT
+  fi
   find_and_activate_venv
+}
+
+# Deactivate venv and clear VENV_PROJECT
+dvenv() {
+  if [[ -n "$VIRTUAL_ENV" ]]; then
+    deactivate
+    unset VENV_PROJECT
+    echo "Deactivated venv"
+  else
+    echo "No active venv"
+  fi
 }
 
 # Data directory - find or create data directory for current project

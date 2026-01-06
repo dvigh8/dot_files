@@ -53,3 +53,5 @@ alias te='cd "$(lf -print-last-dir "$@")"'
 
 # Venv activation
 alias venv='auto_venv'
+
+alias za="zellij attach"
