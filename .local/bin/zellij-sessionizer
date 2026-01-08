@@ -9,11 +9,13 @@ OS_TYPE="${ZELLIJ_SESSIONIZER_OS_TYPE:-"$(uname)"}"
 ZELLIJ_SWITCH_PLUGIN="${ZELLIJ_SESSIONIZER_SWITCH_PLUGIN:-"https://github.com/mostafaqanbaryan/zellij-switch/releases/download/0.2.1/zellij-switch.wasm"}"
 
 HISTORY_FILE="${HOME}/.config/zellij/session-history"
+TAB_HISTORY_FILE="${HOME}/.config/zellij/tab-history"
 MAX_HISTORY=1000
 
-# Ensure history file exists
+# Ensure history files exist
 mkdir -p "$(dirname "$HISTORY_FILE")"
 touch "$HISTORY_FILE"
+touch "$TAB_HISTORY_FILE"
 
 # Function to get timestamp from history for a session
 get_history_timestamp() {
@@ -32,6 +34,68 @@ add_to_history() {
     tail -n "$MAX_HISTORY" "$HISTORY_FILE" > "${HISTORY_FILE}.tmp"
     mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
   fi
+}
+
+# Function to save the current tab position for a session
+save_tab_position() {
+  local session_name="$1"
+  local tab_position="$2"
+  
+  # Remove existing entry for this session and add new one
+  grep -v "^${session_name} " "$TAB_HISTORY_FILE" > "${TAB_HISTORY_FILE}.tmp" 2>/dev/null || true
+  echo "${session_name} ${tab_position}" >> "${TAB_HISTORY_FILE}.tmp"
+  mv "${TAB_HISTORY_FILE}.tmp" "$TAB_HISTORY_FILE"
+}
+
+# Function to get saved tab position for a session
+get_saved_tab_position() {
+  local session_name="$1"
+  grep "^${session_name} " "$TAB_HISTORY_FILE" 2>/dev/null | tail -1 | cut -d' ' -f2
+}
+
+# Function to get current tab position (1-indexed)
+get_current_tab_position() {
+  # Use zellij action query-tab-names and parse the output
+  # The active tab has a marker, we need to find its position
+  local tab_info
+  tab_info=$(zellij action query-tab-names 2>/dev/null)
+  
+  if [[ -z "$tab_info" ]]; then
+    echo "1"
+    return
+  fi
+  
+  # query-tab-names returns tab names one per line
+  # We need to get the focused tab index from zellij
+  # Alternative: use dump-layout and parse it, but that's complex
+  
+  # Simpler approach: use the ZELLIJ_PANE_ID environment and try to infer
+  # Actually, there's no direct way to get current tab from CLI
+  
+  # Best approach: parse the output of `zellij action dump-layout`
+  # which includes tab information with focus state
+  local layout
+  layout=$(zellij action dump-layout 2>/dev/null)
+  
+  if [[ -z "$layout" ]]; then
+    echo "1"
+    return
+  fi
+  
+  # Count tabs and find the focused one
+  # The layout format has "tab focus=true" for the active tab
+  local tab_num=0
+  local focused_tab=1
+  while IFS= read -r line; do
+    if [[ "$line" =~ ^[[:space:]]*tab ]]; then
+      ((tab_num++))
+      if [[ "$line" =~ focus=true ]]; then
+        focused_tab=$tab_num
+      fi
+    fi
+  done <<< "$layout"
+  
+  echo "$focused_tab"
 }
 
 # Function to generate the display list
@@ -243,7 +307,15 @@ add_to_history "$session_name"
 
 # Change to session
 if [[ -n "$ZELLIJ" ]]; then
-  # if we are in a zellij session
+  # Save current tab position for the session we're leaving
+  current_session="$ZELLIJ_SESSION_NAME"
+  if [[ -n "$current_session" ]]; then
+    current_tab=$(get_current_tab_position)
+    save_tab_position "$current_session" "$current_tab"
+  fi
+  
+  # Switch to the target session
+  # NOTE: Tab restoration requires modifying zellij-switch plugin to support --tab parameter
   zellij pipe --plugin "$ZELLIJ_SWITCH_PLUGIN" -- "--session $session_name --cwd $selected_dir"
 else
   # if we are not in a zellij session
