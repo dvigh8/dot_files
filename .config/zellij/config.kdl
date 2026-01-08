@@ -174,9 +174,13 @@ keybinds {
         bind "Space" { NextSwapLayout; }
         bind "x" { CloseFocus; SwitchToMode "Normal"; }
         bind "s" {
-            LaunchOrFocusPlugin "session-manager" {
+            Run "zellij-sessionizer" {
+                close_on_exit true
                 floating true
-                move_to_focused_tab true
+                x "30%"
+                y "10%"
+                width "40%"
+                height "80%"
             };
             SwitchToMode "Normal"
         }

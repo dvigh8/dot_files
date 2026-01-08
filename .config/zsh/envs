@@ -26,3 +26,7 @@ fi
 [[ -d "$HOME/.cargo/bin" ]] && export PATH="$PATH:$HOME/.cargo/bin"
 [[ -d "$HOME/.local/bin" ]] && export PATH="$PATH:$HOME/.local/bin"
 [[ -d "$HOME/.lmstudio/bin" ]] && export PATH="$PATH:$HOME/.lmstudio/bin"
+
+# Zellij Sessionizer
+export ZELLIJ_SESSIONIZER_SEARCH_PATHS="$HOME/Repos $HOME/Work"
+export ZELLIJ_SESSIONIZER_SPECIFIC_PATHS="$HOME/.config"
