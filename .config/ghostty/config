@@ -1,6 +1,6 @@
 font-size = 18
 
 keybind = clear
-keybind = shift+enter=text:\n
+keybind = shift+enter=text:\x1b[13;2u
 keybind = cmd+c=copy_to_clipboard
 keybind = cmd+v=paste_from_clipboard

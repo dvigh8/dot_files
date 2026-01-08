@@ -195,32 +195,24 @@ keybinds clear-defaults=true {
             MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
                 name "move_focus_or_tab";
                 payload "left";
-                move_mod "ctrl";
-                resize_mod "ctrl+shift";
             };
         }
         bind "Ctrl j" {
             MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
                 name "move_focus";
                 payload "down";
-                move_mod "ctrl";
-                resize_mod "ctrl+shift";
             };
         }
         bind "Ctrl k" {
             MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
                 name "move_focus";
                 payload "up";
-                move_mod "ctrl";
-                resize_mod "ctrl+shift";
             };
         }
         bind "Ctrl l" {
             MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
                 name "move_focus_or_tab";
                 payload "right";
-                move_mod "ctrl";
-                resize_mod "ctrl+shift";
             };
         }
         // Smart resize with Neovim awareness (via vim-zellij-navigator v0.3.0)
@@ -228,32 +220,24 @@ keybinds clear-defaults=true {
             MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
                 name "resize";
                 payload "left";
-                move_mod "ctrl";
-                resize_mod "ctrl+shift";
             };
         }
         bind "Ctrl Shift j" {
             MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
                 name "resize";
                 payload "down";
-                move_mod "ctrl";
-                resize_mod "ctrl+shift";
             };
         }
         bind "Ctrl Shift k" {
             MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
                 name "resize";
                 payload "up";
-                move_mod "ctrl";
-                resize_mod "ctrl+shift";
             };
         }
         bind "Ctrl Shift l" {
             MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
                 name "resize";
                 payload "right";
-                move_mod "ctrl";
-                resize_mod "ctrl+shift";
             };
         }
         // Other Ctrl+Shift bindings
