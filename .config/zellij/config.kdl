@@ -1,5 +1,5 @@
-// If you'd like to override the default keybindings completely, be sure to change "keybinds" to "keybinds clear-defaults=true"
-keybinds {
+// Using clear-defaults=true to prevent default Alt bindings from conflicting with system window manager
+keybinds clear-defaults=true {
     normal {
         // uncomment this and adjust key if using copy_on_select=false
         // bind "Alt c" { Copy; }
@@ -38,9 +38,10 @@ keybinds {
         bind "e" { TogglePaneEmbedOrFloating; SwitchToMode "Normal"; }
         bind "c" { SwitchToMode "RenamePane"; PaneNameInput 0;}
         bind "i" { TogglePanePinned; SwitchToMode "Normal"; }
+        bind "m" { SwitchToMode "Move"; }
     }
     move {
-        bind "Ctrl h" { SwitchToMode "Normal"; }
+        bind "Ctrl p" { SwitchToMode "Normal"; }
         bind "n" "Tab" { MovePane; }
         bind "p" { MovePaneBackwards; }
         bind "h" "Left" { MovePane "Left"; }
@@ -188,15 +189,78 @@ keybinds {
     shared_except "locked" {
         bind "Ctrl g" { SwitchToMode "Locked"; }
         bind "Ctrl q" { Quit; }
-        // Using Ctrl+Shift to avoid conflicts with aerospace and existing bindings
+        // Smart navigation with Neovim awareness (via vim-zellij-navigator v0.3.0)
+        // Ctrl h/l use move_focus_or_tab to switch tabs at edge
+        bind "Ctrl h" {
+            MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
+                name "move_focus_or_tab";
+                payload "left";
+                move_mod "ctrl";
+                resize_mod "ctrl+shift";
+            };
+        }
+        bind "Ctrl j" {
+            MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
+                name "move_focus";
+                payload "down";
+                move_mod "ctrl";
+                resize_mod "ctrl+shift";
+            };
+        }
+        bind "Ctrl k" {
+            MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
+                name "move_focus";
+                payload "up";
+                move_mod "ctrl";
+                resize_mod "ctrl+shift";
+            };
+        }
+        bind "Ctrl l" {
+            MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
+                name "move_focus_or_tab";
+                payload "right";
+                move_mod "ctrl";
+                resize_mod "ctrl+shift";
+            };
+        }
+        // Smart resize with Neovim awareness (via vim-zellij-navigator v0.3.0)
+        bind "Ctrl Shift h" {
+            MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
+                name "resize";
+                payload "left";
+                move_mod "ctrl";
+                resize_mod "ctrl+shift";
+            };
+        }
+        bind "Ctrl Shift j" {
+            MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
+                name "resize";
+                payload "down";
+                move_mod "ctrl";
+                resize_mod "ctrl+shift";
+            };
+        }
+        bind "Ctrl Shift k" {
+            MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
+                name "resize";
+                payload "up";
+                move_mod "ctrl";
+                resize_mod "ctrl+shift";
+            };
+        }
+        bind "Ctrl Shift l" {
+            MessagePlugin "https://github.com/hiasr/vim-zellij-navigator/releases/download/0.3.0/vim-zellij-navigator.wasm" {
+                name "resize";
+                payload "right";
+                move_mod "ctrl";
+                resize_mod "ctrl+shift";
+            };
+        }
+        // Other Ctrl+Shift bindings
         bind "Ctrl Shift f" { ToggleFloatingPanes; }
         bind "Ctrl Shift n" { NewPane; }
         bind "Ctrl Shift i" { MoveTab "Left"; }
         bind "Ctrl Shift o" { MoveTab "Right"; }
-        bind "Ctrl Shift h" { MoveFocusOrTab "Left"; }
-        bind "Ctrl Shift l" { MoveFocusOrTab "Right"; }
-        bind "Ctrl Shift j" { MoveFocus "Down"; }
-        bind "Ctrl Shift k" { MoveFocus "Up"; }
         bind "Ctrl Shift =" "Ctrl Shift +" { Resize "Increase"; }
         bind "Ctrl Shift -" { Resize "Decrease"; }
         bind "Ctrl Shift [" { PreviousSwapLayout; }
@@ -223,7 +287,6 @@ keybinds {
         bind "Ctrl t" { SwitchToMode "Tab"; }
     }
     shared_except "move" "locked" {
-        bind "Ctrl h" { SwitchToMode "Move"; }
     }
     shared_except "tmux" "locked" {
         bind "Ctrl b" { SwitchToMode "Tmux"; }
