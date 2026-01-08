@@ -1,0 +1,251 @@
+#!/usr/bin/env bash
+
+# Source environment variables if available
+[[ -f "$HOME/.config/zsh/envs" ]] && source "$HOME/.config/zsh/envs"
+
+SEARCH_PATHS=(${ZELLIJ_SESSIONIZER_SEARCH_PATHS:-"$HOME/Projects $HOME/Code"})
+SPECIFIC_PATHS=(${ZELLIJ_SESSIONIZER_SPECIFIC_PATHS:-"$HOME/.dotfiles $HOME/.dotfiles/.config/nvim"})
+OS_TYPE="${ZELLIJ_SESSIONIZER_OS_TYPE:-"$(uname)"}"
+ZELLIJ_SWITCH_PLUGIN="${ZELLIJ_SESSIONIZER_SWITCH_PLUGIN:-"https://github.com/mostafaqanbaryan/zellij-switch/releases/download/0.2.1/zellij-switch.wasm"}"
+
+HISTORY_FILE="${HOME}/.config/zellij/session-history"
+MAX_HISTORY=1000
+
+# Ensure history file exists
+mkdir -p "$(dirname "$HISTORY_FILE")"
+touch "$HISTORY_FILE"
+
+# Function to get timestamp from history for a session
+get_history_timestamp() {
+  local session_name="$1"
+  # Get the most recent timestamp for this session (last occurrence in file)
+  grep " ${session_name}$" "$HISTORY_FILE" 2>/dev/null | tail -1 | cut -d' ' -f1
+}
+
+# Function to add session to history
+add_to_history() {
+  local session_name="$1"
+  echo "$(date +%s) $session_name" >> "$HISTORY_FILE"
+  
+  # Trim history if too large
+  if [[ $(wc -l < "$HISTORY_FILE") -gt $MAX_HISTORY ]]; then
+    tail -n "$MAX_HISTORY" "$HISTORY_FILE" > "${HISTORY_FILE}.tmp"
+    mv "${HISTORY_FILE}.tmp" "$HISTORY_FILE"
+  fi
+}
+
+# Function to generate the display list
+# Order: (current) at top, then no-session alphabetically, then sessions by MRU (most recent at bottom)
+generate_display_list() {
+  # Collect all directories
+  local all_dirs=()
+
+  # Add first-level directories from SEARCH_PATHS
+  for search_path in "${SEARCH_PATHS[@]}"; do
+    if [[ -d "$search_path" ]]; then
+      for dir in "$search_path"/*; do
+        if [[ -d "$dir" ]]; then
+          all_dirs+=("$dir")
+        fi
+      done
+    fi
+  done
+
+  # Add SPECIFIC_PATHS
+  for specific_path in "${SPECIFIC_PATHS[@]}"; do
+    if [[ -d "$specific_path" ]]; then
+      all_dirs+=("$specific_path")
+    fi
+  done
+
+  # Get zellij session information
+  declare -A session_status
+  declare -A session_type
+  if command -v zellij >/dev/null 2>&1; then
+    while IFS= read -r line; do
+      if [[ -n "$line" ]]; then
+        # Extract session name (first word)
+        local session_name=$(echo "$line" | awk '{print $1}')
+        
+        # Determine status with colors
+        if [[ "$line" == *"(current)"* ]]; then
+          session_status["$session_name"]=" $(tput setaf 2)(current)$(tput sgr0)"
+          session_type["$session_name"]="current"
+        elif [[ "$line" == *"(EXITED"* ]]; then
+          session_status["$session_name"]=" $(tput setaf 1)(exited)$(tput sgr0)"
+          session_type["$session_name"]="exited"
+        else
+          session_status["$session_name"]=" $(tput setaf 3)(active)$(tput sgr0)"
+          session_type["$session_name"]="active"
+        fi
+      fi
+    done < <(zellij ls -n 2>/dev/null)
+  fi
+
+  # Separate directories into categories
+  local current_session=""
+  local no_session_dirs=()
+  local has_session_dirs=()
+
+  for dir in "${all_dirs[@]}"; do
+    local session_name=$(basename "$dir")
+    
+    if [[ "${session_type[$session_name]}" == "current" ]]; then
+      current_session="$dir"
+    elif [[ -n "${session_status[$session_name]}" ]]; then
+      has_session_dirs+=("$dir")
+    else
+      no_session_dirs+=("$dir")
+    fi
+  done
+
+  # Sort no-session directories reverse alphabetically (Z-A, so A ends up closer to sessions visually)
+  local sorted_no_session=()
+  while IFS= read -r dir; do
+    [[ -n "$dir" ]] && sorted_no_session+=("$dir")
+  done < <(printf '%s\n' "${no_session_dirs[@]}" | sort -t'/' -k$(echo "$HOME" | tr -cd '/' | wc -c | tr -d ' '),999 -fr)
+
+  # Sort has-session directories by history timestamp descending (MRU first, so MRU at visual bottom)
+  local temp_file=$(mktemp)
+  for dir in "${has_session_dirs[@]}"; do
+    local session_name=$(basename "$dir")
+    local timestamp=$(get_history_timestamp "$session_name")
+    # Default to 0 if no history (will appear last among sessions, near no-session)
+    [[ -z "$timestamp" ]] && timestamp="0"
+    echo "$timestamp $dir" >> "$temp_file"
+  done
+  
+  local sorted_has_session=()
+  while IFS= read -r line; do
+    local dir="${line#* }"
+    [[ -n "$dir" ]] && sorted_has_session+=("$dir")
+  done < <(sort -rn "$temp_file")
+  rm -f "$temp_file"
+
+  # Output order for fzf (no --reverse, prompt at bottom):
+  # First output → visual bottom (near cursor)
+  # Last output → visual top
+  #
+  # Desired visual order (top to bottom):
+  # 1. Current session (visual top) → output LAST
+  # 2. No-session directories (middle) → output in MIDDLE (reverse alpha so A near sessions)
+  # 3. Sessions by history, MRU at visual bottom → output FIRST (MRU first)
+  
+  # 1. Has-session directories (MRU first in output → MRU at visual bottom near cursor)
+  for dir in "${sorted_has_session[@]}"; do
+    local display_name=$(echo "$dir" | sed "s|^$HOME|~|")
+    local session_name=$(basename "$dir")
+    echo "${display_name}${session_status[$session_name]}"
+  done
+
+  # 2. No-session directories (reverse alphabetically Z-A, so A appears closer to sessions)
+  for dir in "${sorted_no_session[@]}"; do
+    local display_name=$(echo "$dir" | sed "s|^$HOME|~|")
+    echo "$display_name"
+  done
+
+  # 3. Current session (output last → appears at visual top)
+  if [[ -n "$current_session" ]]; then
+    local display_name=$(echo "$current_session" | sed "s|^$HOME|~|")
+    local session_name=$(basename "$current_session")
+    echo "${display_name}${session_status[$session_name]}"
+  fi
+}
+
+# Handle special arguments (for fzf reload)
+if [[ "$1" == "--generate-list" ]]; then
+  generate_display_list
+  exit 0
+fi
+
+# Function to extract session name from display line
+extract_session_name() {
+  local display_line="$1"
+  # Remove both colored and plain status information
+  local clean_path=$(echo "$display_line" | sed 's/ \x1b\[[0-9;]*m([^)]*)\x1b\[[0-9;]*m$//' | sed 's/ ([^)]*)$//')
+  local full_path
+  if [[ "$clean_path" == ~* ]]; then
+    full_path="$HOME${clean_path:1}"
+  else
+    full_path="$clean_path"
+  fi
+  basename "$full_path"
+}
+
+# Create a temporary script for session operations
+temp_script=$(mktemp)
+cat > "$temp_script" << 'EOF'
+#!/usr/bin/env bash
+
+# Extract session name from display line
+extract_session_name() {
+  local display_line="$1"
+  # Remove both colored and plain status information
+  local clean_path=$(echo "$display_line" | sed 's/ \x1b\[[0-9;]*m([^)]*)\x1b\[[0-9;]*m$//' | sed 's/ ([^)]*)$//')
+  local full_path
+  if [[ "$clean_path" == ~* ]]; then
+    full_path="$HOME${clean_path:1}"
+  else
+    full_path="$clean_path"
+  fi
+  basename "$full_path"
+}
+
+# Handle delete session
+if [[ "$1" == "delete" ]]; then
+  session_name=$(extract_session_name "$2")
+  if [[ -n "$session_name" ]]; then
+    zellij delete-session "$session_name" --force 2>/dev/null
+  fi
+fi
+
+# Handle kill session  
+if [[ "$1" == "kill" ]]; then
+  session_name=$(extract_session_name "$2")
+  if [[ -n "$session_name" ]]; then
+    zellij kill-session "$session_name" 2>/dev/null
+  fi
+fi
+EOF
+
+chmod +x "$temp_script"
+
+# Use fzf with key bindings for session management
+selected_display=$(generate_display_list | fzf --ansi \
+  --prompt="Select project: " \
+  --header="Enter: Select | Ctrl+D: Delete Session | Ctrl+K: Kill Session" \
+  --bind="ctrl-d:execute($temp_script delete {})+reload($0 --generate-list)" \
+  --bind="ctrl-k:execute($temp_script kill {})+reload($0 --generate-list)")
+
+# Clean up temp script
+rm -f "$temp_script"
+
+# Exit if nothing was selected
+if [[ -z "$selected_display" ]]; then
+  exit 0
+fi
+
+# Convert selected display name back to full path
+# Remove status information if present (including color codes)
+clean_display=$(echo "$selected_display" | sed 's/ \x1b\[[0-9;]*m([^)]*)\x1b\[[0-9;]*m$//' | sed 's/ ([^)]*)$//')
+
+if [[ "$clean_display" == ~* ]]; then
+  selected_dir="$HOME${clean_display:1}"
+else
+  selected_dir="$clean_display"
+fi
+
+# Create session name from directory basename
+session_name=$(basename "$selected_dir")
+
+# Add to history before switching
+add_to_history "$session_name"
+
+# Change to session
+if [[ -n "$ZELLIJ" ]]; then
+  # if we are in a zellij session
+  zellij pipe --plugin "$ZELLIJ_SWITCH_PLUGIN" -- "--session $session_name --cwd $selected_dir"
+else
+  # if we are not in a zellij session
+  zellij attach "$session_name" --create --cwd "$selected_dir"
+fi
