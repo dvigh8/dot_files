@@ -19,7 +19,7 @@ hs.hotkey.bind({ "cmd", "ctrl" }, "L", function()
 	-- Call Home Assistant REST API
 	hs.http.asyncPost(
 		"http://homeassistant.local:8123/api/services/light/toggle",
-		'{"entity_id": ["light.innr_2", "light.innr_3"]}',
+		'{"entity_id": ["light.innr_2", "light.innr_3", "light.innr_4"]}',
 		{ ["Authorization"] = "Bearer " .. HA_TOKEN, ["Content-Type"] = "application/json" },
 		function(status, body, headers)
 			if status == 200 then

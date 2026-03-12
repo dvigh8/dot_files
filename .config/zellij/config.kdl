@@ -1,5 +1,5 @@
-// If you'd like to override the default keybindings completely, be sure to change "keybinds" to "keybinds clear-defaults=true"
-keybinds {
+// Using clear-defaults=true to prevent default Alt bindings from conflicting with system window manager
+keybinds clear-defaults=true {
     normal {
         // uncomment this and adjust key if using copy_on_select=false
         // bind "Alt c" { Copy; }
@@ -38,9 +38,10 @@ keybinds {
         bind "e" { TogglePaneEmbedOrFloating; SwitchToMode "Normal"; }
         bind "c" { SwitchToMode "RenamePane"; PaneNameInput 0;}
         bind "i" { TogglePanePinned; SwitchToMode "Normal"; }
+        bind "m" { SwitchToMode "Move"; }
     }
     move {
-        bind "Ctrl h" { SwitchToMode "Normal"; }
+        bind "Ctrl p" { SwitchToMode "Normal"; }
         bind "n" "Tab" { MovePane; }
         bind "p" { MovePaneBackwards; }
         bind "h" "Left" { MovePane "Left"; }
@@ -174,9 +175,13 @@ keybinds {
         bind "Space" { NextSwapLayout; }
         bind "x" { CloseFocus; SwitchToMode "Normal"; }
         bind "s" {
-            LaunchOrFocusPlugin "session-manager" {
+            Run "zellij-sessionizer" {
+                close_on_exit true
                 floating true
-                move_to_focused_tab true
+                x "30%"
+                y "10%"
+                width "40%"
+                height "80%"
             };
             SwitchToMode "Normal"
         }
@@ -184,15 +189,16 @@ keybinds {
     shared_except "locked" {
         bind "Ctrl g" { SwitchToMode "Locked"; }
         bind "Ctrl q" { Quit; }
-        // Using Ctrl+Shift to avoid conflicts with aerospace and existing bindings
-        bind "Ctrl Shift f" { ToggleFloatingPanes; }
-        bind "Ctrl Shift n" { NewPane; }
-        bind "Ctrl Shift i" { MoveTab "Left"; }
-        bind "Ctrl Shift o" { MoveTab "Right"; }
+        // Standard navigation with MoveFocusOrTab for horizontal (pane + tab switching)
         bind "Ctrl Shift h" { MoveFocusOrTab "Left"; }
         bind "Ctrl Shift l" { MoveFocusOrTab "Right"; }
         bind "Ctrl Shift j" { MoveFocus "Down"; }
         bind "Ctrl Shift k" { MoveFocus "Up"; }
+        // Other Ctrl+Shift bindings
+        bind "Ctrl Shift f" { ToggleFloatingPanes; }
+        bind "Ctrl Shift n" { NewPane; }
+        bind "Ctrl Shift i" { MoveTab "Left"; }
+        bind "Ctrl Shift o" { MoveTab "Right"; }
         bind "Ctrl Shift =" "Ctrl Shift +" { Resize "Increase"; }
         bind "Ctrl Shift -" { Resize "Decrease"; }
         bind "Ctrl Shift [" { PreviousSwapLayout; }
@@ -219,7 +225,6 @@ keybinds {
         bind "Ctrl t" { SwitchToMode "Tab"; }
     }
     shared_except "move" "locked" {
-        bind "Ctrl h" { SwitchToMode "Move"; }
     }
     shared_except "tmux" "locked" {
         bind "Ctrl b" { SwitchToMode "Tmux"; }
