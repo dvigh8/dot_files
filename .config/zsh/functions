@@ -190,6 +190,9 @@ c_heic() {
   for f in *.heic; do
     magick "$f" -define jpeg:extent=5MB "${f%.heic}.jpg"
   done
+  for f in *.HEIC; do
+    magick "$f" -define jpeg:extent=5MB "${f%.HEIC}.jpg"
+  done
 }
 
 # Compression
