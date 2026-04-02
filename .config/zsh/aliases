@@ -21,6 +21,7 @@ alias gcad='git commit -a --amend'
 
 # Editors
 alias vi='nvim'
+alias kvim='NVIM_APPNAME="kvim" nvim'
 
 # Tools
 alias d='docker'
