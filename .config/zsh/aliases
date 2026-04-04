@@ -71,3 +71,7 @@ alias cat='bat --paging=never'
 alias diff='delta'
 # Network
 alias ports='lsof -iTCP -sTCP:LISTEN -P -n'
+
+alias ml="mise tasks ls"
+alias mr="mise run"
+
