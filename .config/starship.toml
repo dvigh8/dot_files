@@ -40,7 +40,7 @@ modified   = " "
 stashed    = ""
 staged     = ""
 renamed    = ""
-deleted    = ""
+deleted    = "[✘ ](red)"
 
 [env_var.VENV_PROJECT]
 format = "[\\($env_value\\)]($style)"

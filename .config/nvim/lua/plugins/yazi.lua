@@ -1,38 +1,16 @@
 return {
   'mikavilpas/yazi.nvim',
-  version = '*', -- use the latest stable version
-  event = 'VeryLazy',
-  dependencies = {
-    { 'nvim-lua/plenary.nvim', lazy = true },
-  },
+  version = '*',
+  -- Lazy-load on the keymaps that open it. We disabled netrw in init.lua,
+  -- so yazi is the only file browser.
   keys = {
-    -- Configure your keymappings
-    {
-      '<leader>-',
-      mode = { 'n', 'v' },
-      '<cmd>Yazi<cr>',
-      desc = 'Open yazi at the current file',
-    },
-    {
-      '<leader>cw',
-      '<cmd>Yazi cwd<cr>',
-      desc = "Open yazi in nvim's working directory",
-    },
-    {
-      '<c-up>',
-      '<cmd>Yazi toggle<cr>',
-      desc = 'Resume the last yazi session',
-    },
+    { '<leader>-', '<cmd>Yazi<cr>', mode = { 'n', 'v' }, desc = 'Open yazi at the current file' },
+    { '<leader>cw', '<cmd>Yazi cwd<cr>', desc = "Open yazi in nvim's cwd" },
+    { '<C-Up>', '<cmd>Yazi toggle<cr>', desc = 'Resume yazi' },
   },
+  dependencies = { 'nvim-lua/plenary.nvim' },
   opts = {
-    -- Set to true if you want to use yazi instead of netrw
     open_for_directories = false,
-    keymaps = {
-      show_help = '<f1>',
-    },
+    keymaps = { show_help = '<f1>' },
   },
-  init = function()
-    -- Optional: disable netrw entirely
-    vim.g.loaded_netrwPlugin = 1
-  end,
 }
