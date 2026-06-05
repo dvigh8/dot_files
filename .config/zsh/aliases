@@ -75,3 +75,4 @@ alias ports='lsof -iTCP -sTCP:LISTEN -P -n'
 alias ml="mise tasks ls"
 alias mr="mise run"
 
+alias mov4='f=$(command ls -t "$HOME"/Desktop/Screen\ Recording*.mov 2>/dev/null | head -n 1); [ -n "$f" ] && ffmpeg -i "$f" -c:v libx264 -c:a aac -movflags +faststart "${f%.mov}.mp4" || echo "No screen recordings found on Desktop"'
