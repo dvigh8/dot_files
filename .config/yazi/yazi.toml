@@ -1,9 +1,18 @@
+[manager]
+ratio = [1, 2, 4]
+
+[preview]
+max_width  = 1000
+max_height = 1000
+image_filter = "triangle"
 [[plugin.prepend_fetchers]]
 id   = "git"
-name = "*"
+url  = "*"
+group = "git"
 run  = "git"
 
 [[plugin.prepend_fetchers]]
 id   = "git"
-name = "*/"
+url  = "*/"
+group = "git"
 run  = "git"
