@@ -54,3 +54,51 @@ fi
 [[ -f "$HOME/.envs" ]] && source "$HOME/.envs"
 [[ -f "$HOME/.local/bin/env" ]] && source "$HOME/.local/bin/env"
 [[ -f "$HOME/.commands_manager" ]] && source "$HOME/.commands_manager"
+
+# Name Herdr tabs from the active command, then from the prompt directory.
+if [[ ${HERDR_ENV-} == 1 && -n ${HERDR_TAB_ID-} ]]; then
+  autoload -Uz add-zsh-hook
+  typeset -g _herdr_tab_last_label=''
+
+  _herdr_tab_rename() {
+    emulate -L zsh
+    setopt extendedglob
+    local label=$1
+    label=${label//$'\n'/ }
+    label=${label//$'\r'/ }
+    label=${label//[^[:alnum:][:space:]_.:\/@+=-]/_}
+    label=${label//[[:space:]]##/ }
+    label=${label##[[:space:]]##}
+    label=${label%%[[:space:]]##}
+    label=${label[1,60]}
+    [[ -n $label && $label != $_herdr_tab_last_label ]] || return
+
+    _herdr_tab_last_label=$label
+    herdr tab rename "$HERDR_TAB_ID" "$label" >/dev/null 2>&1 &!
+  }
+
+  _herdr_tab_preexec() {
+    local -a words
+    local word
+    words=(${(z)1})
+    for word in $words; do
+      [[ $word == [[:alpha:]_][[:alnum:]_]*=* ]] && continue
+      case $word in
+        cd|pushd|popd|z|zi|zd) return ;;
+      esac
+      _herdr_tab_rename "$word"
+      return
+    done
+  }
+
+  _herdr_tab_precmd() {
+    [[ $PWD != ${_herdr_tab_last_prompt_dir-} ]] || return
+    _herdr_tab_last_prompt_dir=$PWD
+    _herdr_tab_rename "${PWD:t}"
+  }
+
+  add-zsh-hook -d preexec _herdr_tab_preexec 2>/dev/null
+  add-zsh-hook -d precmd _herdr_tab_precmd 2>/dev/null
+  add-zsh-hook preexec _herdr_tab_preexec
+  add-zsh-hook precmd _herdr_tab_precmd
+fi

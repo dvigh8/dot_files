@@ -72,6 +72,8 @@ alias diff='delta'
 # Network
 alias ports='lsof -iTCP -sTCP:LISTEN -P -n'
 
+alias o="opencode"
+
 alias ml="mise tasks ls"
 alias mr="mise run"
 

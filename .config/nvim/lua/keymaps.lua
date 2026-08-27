@@ -13,7 +13,7 @@ map('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Diagnostic [Q]uickfix
 
 -- Don't yank when deleting single chars / pasting over selection.
 map({ 'n', 'v' }, 'x', '"_x', { desc = 'Delete char without yanking' })
-map('x', 'p', [["_dP]], { desc = 'Paste without yanking selection' })
+map('x', 'p', [["_dp]], { desc = 'Paste without yanking selection' })
 
 -- Better window navigation.
 map('n', '<C-h>', '<C-w>h', { desc = 'Window left' })

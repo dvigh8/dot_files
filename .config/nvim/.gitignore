@@ -1,8 +1,4 @@
-tt.*
-.tests
-doc/tags
-debug
-.repro
-foo.*
-*.log
-data
+# Lazy state lives in stdpath('data'), not the config dir, so nothing to ignore there.
+# We DO track lazy-lock.json so plugin versions are reproducible.
+.DS_Store
+spell/
